@@ -1,0 +1,769 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Bingo Brujo 🎵</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,400;0,500;0,600;1,400&family=Playfair+Display:wght@700&display=swap" rel="stylesheet"/>
+<style>
+/* ═══ TOKENS ═══ */
+:root {
+  --bg:      #0d0d1a;
+  --surface: #14142b;
+  --card:    #1c1c3a;
+  --accent:  #f0c040;
+  --accent2: #e05c8a;
+  --blue:    #4dacff;
+  --green:   #5ef0a0;
+  --text:    #f0eeff;
+  --muted:   #8888aa;
+  --border:  rgba(255,255,255,0.07);
+  --radius:  16px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'DM Sans', sans-serif;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+body::before {
+  content:''; position:fixed; top:-200px; left:-200px;
+  width:600px; height:600px;
+  background:radial-gradient(circle,rgba(77,172,255,0.12) 0%,transparent 70%);
+  pointer-events:none; z-index:0;
+}
+body::after {
+  content:''; position:fixed; bottom:-200px; right:-200px;
+  width:700px; height:700px;
+  background:radial-gradient(circle,rgba(224,92,138,0.1) 0%,transparent 70%);
+  pointer-events:none; z-index:0;
+}
+
+/* ═══ HEADER ═══ */
+header {
+  position:relative; z-index:10;
+  text-align:center; padding:2.5rem 1rem 0;
+}
+.logo-emoji { font-size:2.2rem; display:block; margin-bottom:0.3rem; }
+header h1 {
+  font-family:'Bebas Neue',sans-serif;
+  font-size:clamp(2.8rem,8vw,5rem);
+  letter-spacing:0.05em; line-height:1;
+  background:linear-gradient(135deg,var(--accent),var(--accent2) 60%,var(--blue));
+  -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
+}
+header p { color:var(--muted); font-size:0.9rem; margin-top:0.3rem; letter-spacing:0.05em; }
+
+/* ═══ TABS ═══ */
+.tabs-wrap {
+  position:relative; z-index:10;
+  display:flex; justify-content:center; gap:0.4rem;
+  padding:1.5rem 1rem 0;
+  border-bottom:1px solid var(--border);
+}
+.tab-btn {
+  padding:0.65rem 1.4rem;
+  background:transparent;
+  border:1px solid var(--border); border-bottom:none;
+  border-radius:10px 10px 0 0;
+  color:var(--muted);
+  font-family:'DM Sans',sans-serif; font-size:0.88rem; font-weight:600;
+  letter-spacing:0.04em; cursor:pointer;
+  transition:background 0.2s,color 0.2s;
+}
+.tab-btn:hover { color:var(--text); background:var(--surface); }
+.tab-btn.active { background:var(--surface); color:var(--accent); }
+.tab-panel { display:none; }
+.tab-panel.active { display:flex; flex-direction:column; gap:1.5rem; }
+
+/* ═══ MAIN ═══ */
+main {
+  position:relative; z-index:10;
+  max-width:960px; margin:0 auto;
+  padding:2rem 1.5rem 4rem;
+  display:flex; flex-direction:column; gap:1.5rem;
+}
+
+/* ═══ SECTION ═══ */
+.section {
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:var(--radius); padding:1.75rem;
+}
+.section-title {
+  font-family:'Bebas Neue',sans-serif;
+  font-size:1.5rem; letter-spacing:0.08em;
+  color:var(--accent); margin-bottom:1rem;
+  display:flex; align-items:center; gap:0.5rem;
+}
+
+/* ═══ FORM ═══ */
+label {
+  display:block; font-size:0.78rem; font-weight:600;
+  letter-spacing:0.1em; text-transform:uppercase;
+  color:var(--muted); margin-bottom:0.4rem; margin-top:1rem;
+}
+label:first-child { margin-top:0; }
+input[type="text"],input[type="number"],textarea,select {
+  width:100%; background:var(--card); border:1px solid var(--border);
+  border-radius:10px; color:var(--text);
+  font-family:'DM Sans',sans-serif; font-size:0.95rem;
+  padding:0.7rem 1rem; outline:none;
+  transition:border-color 0.2s,box-shadow 0.2s;
+}
+input:focus,textarea:focus,select:focus {
+  border-color:var(--blue); box-shadow:0 0 0 3px rgba(77,172,255,0.15);
+}
+select { cursor:pointer; }
+select option { background:var(--card); }
+textarea { resize:vertical; min-height:180px; line-height:1.6; }
+.row-2 { display:grid; grid-template-columns:1fr 1fr; gap:1rem; }
+@media(max-width:500px){.row-2{grid-template-columns:1fr;}}
+
+.song-counter { display:flex; align-items:center; gap:0.75rem; margin-top:0.6rem; font-size:0.82rem; color:var(--muted); }
+.badge { background:var(--card); border:1px solid var(--border); border-radius:20px; padding:0.2rem 0.7rem; font-weight:600; color:var(--text); font-size:0.85rem; }
+.badge.warn { color:var(--accent); border-color:var(--accent); }
+.badge.ok   { color:var(--green); border-color:var(--green); }
+
+.check-row { display:flex; align-items:center; gap:0.6rem; margin-top:0.75rem; cursor:pointer; user-select:none; }
+.check-row input[type="checkbox"] { width:18px; height:18px; accent-color:var(--accent); cursor:pointer; flex-shrink:0; }
+.check-row span { font-size:0.9rem; color:var(--text); }
+
+/* ═══ BUTTONS ═══ */
+.btn-generate {
+  width:100%; padding:1.1rem;
+  background:linear-gradient(135deg,var(--accent),var(--accent2));
+  border:none; border-radius:var(--radius);
+  color:#0d0d1a; font-family:'Bebas Neue',sans-serif;
+  font-size:1.5rem; letter-spacing:0.1em; cursor:pointer;
+  transition:opacity 0.2s,transform 0.15s,box-shadow 0.2s;
+  box-shadow:0 4px 24px rgba(240,192,64,0.25);
+}
+.btn-generate:hover { opacity:0.93; transform:translateY(-2px); box-shadow:0 8px 32px rgba(240,192,64,0.35); }
+.btn-generate:active { transform:translateY(0); }
+
+.btn-secondary {
+  padding:0.65rem 1.1rem; background:transparent;
+  border:1px solid var(--border); border-radius:10px; color:var(--text);
+  font-family:'DM Sans',sans-serif; font-size:0.88rem; font-weight:500;
+  cursor:pointer; transition:background 0.2s,border-color 0.2s; white-space:nowrap;
+}
+.btn-secondary:hover { background:var(--card); border-color:var(--muted); }
+
+.btn-danger {
+  padding:0.65rem 1.1rem; background:transparent;
+  border:1px solid rgba(224,92,138,0.4); border-radius:10px; color:var(--accent2);
+  font-family:'DM Sans',sans-serif; font-size:0.88rem; font-weight:500;
+  cursor:pointer; transition:background 0.2s;
+}
+.btn-danger:hover { background:rgba(224,92,138,0.12); }
+
+/* ═══ ERROR ═══ */
+.error-msg {
+  background:rgba(224,92,138,0.12); border:1px solid rgba(224,92,138,0.4);
+  border-radius:10px; padding:0.7rem 1rem; color:var(--accent2);
+  font-size:0.88rem; margin-top:0.75rem; display:none;
+}
+
+/* ═══ OUTPUT / BINGO CARDS ═══ */
+#outputSection { display:none; }
+.output-header {
+  display:flex; justify-content:space-between; align-items:center;
+  flex-wrap:wrap; gap:0.75rem; margin-bottom:1.5rem;
+}
+.output-header h2 { font-family:'Bebas Neue',sans-serif; font-size:1.8rem; letter-spacing:0.06em; color:var(--accent); }
+.output-actions { display:flex; gap:0.5rem; flex-wrap:wrap; }
+
+#cardsContainer { display:grid; grid-template-columns:repeat(auto-fill,minmax(360px,1fr)); gap:1.5rem; }
+
+.bingo-card {
+  background:#fff; border-radius:12px; overflow:hidden;
+  box-shadow:0 8px 32px rgba(0,0,0,0.4);
+  color:#1a2a5a; font-family:'DM Sans',sans-serif;
+  page-break-inside:avoid; break-inside:avoid;
+}
+.bingo-card-header { background:linear-gradient(135deg,#1a3a7a,#2a5aaa); color:#fff; text-align:center; padding:0.85rem 1rem; }
+.bingo-card-header .music-note { font-size:1rem; }
+.bingo-card-title { font-family:'Playfair Display',serif; font-size:1.4rem; font-weight:700; letter-spacing:0.02em; margin:0 0.4rem; }
+.bingo-card-id { font-size:0.6rem; opacity:0.55; margin-top:0.15rem; letter-spacing:0.1em; }
+.bingo-grid { display:grid; padding:7px; gap:3px; }
+.bingo-cell {
+  background:#e8f0fb; border:1px solid #b8cce8; border-radius:5px;
+  display:flex; align-items:center; justify-content:center;
+  text-align:center; padding:4px 3px;
+  font-size:0.65rem; font-weight:600; line-height:1.2;
+  min-height:50px; color:#1a2a5a; word-break:break-word; hyphens:auto;
+}
+.bingo-cell.free-space { background:linear-gradient(135deg,#1a3a7a,#2a5aaa); color:#fff; font-size:0.72rem; font-weight:700; letter-spacing:0.03em; }
+.bingo-cell.big-text { font-size:0.82rem; }
+.bingo-footer { text-align:center; font-size:0.58rem; color:#99a; padding:3px 8px 5px; border-top:1px solid #eee; }
+
+/* ═══ CALLER BOARD ═══ */
+.caller-topbar {
+  display:flex; align-items:center; justify-content:space-between;
+  flex-wrap:wrap; gap:1rem;
+  background:var(--surface); border:1px solid var(--border);
+  border-radius:var(--radius); padding:1.2rem 1.5rem;
+}
+.caller-topbar h2 { font-family:'Bebas Neue',sans-serif; font-size:1.8rem; letter-spacing:0.06em; color:var(--accent); line-height:1; }
+.caller-topbar p { color:var(--muted); font-size:0.82rem; margin-top:0.15rem; }
+.caller-topbar-right { display:flex; gap:0.5rem; flex-wrap:wrap; align-items:center; }
+
+/* spotlight */
+.last-called-wrap { text-align:center; }
+.last-called-label { font-size:0.75rem; font-weight:600; letter-spacing:0.15em; text-transform:uppercase; color:var(--muted); margin-bottom:0.5rem; }
+.last-called-song {
+  display:inline-block;
+  font-family:'Bebas Neue',sans-serif;
+  font-size:clamp(2rem,6vw,3.5rem); letter-spacing:0.04em;
+  background:linear-gradient(135deg,var(--accent),var(--accent2));
+  -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
+  min-height:2rem; padding:0 1rem;
+  transition:opacity 0.35s;
+}
+.last-called-song.empty { opacity:0; }
+
+/* stats */
+.caller-stats { display:flex; gap:0.75rem; justify-content:center; flex-wrap:wrap; }
+.stat-chip { background:var(--surface); border:1px solid var(--border); border-radius:30px; padding:0.3rem 1rem; font-size:0.82rem; color:var(--muted); }
+.stat-chip strong { color:var(--text); }
+
+/* tiles */
+.caller-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(145px,1fr)); gap:0.45rem; }
+.caller-tile {
+  background:var(--card); border:1px solid var(--border);
+  border-radius:10px; padding:0.7rem 0.55rem;
+  font-size:0.78rem; font-weight:600; line-height:1.3;
+  text-align:center; cursor:pointer;
+  transition:background 0.15s,border-color 0.15s,transform 0.12s,opacity 0.2s;
+  user-select:none; color:var(--text);
+}
+.caller-tile:hover { background:#2a2a5a; border-color:var(--blue); transform:scale(1.03); }
+.caller-tile.called {
+  background:rgba(94,240,160,0.1); border-color:var(--green);
+  color:var(--green); opacity:0.65;
+  text-decoration:line-through;
+  text-decoration-color:rgba(94,240,160,0.45);
+  transform:none; cursor:pointer;
+}
+.caller-tile.called:hover { opacity:1; transform:scale(1.01); }
+
+/* ═══ CALLER'S CARD (printable) ═══ */
+.callercard-topbar {
+  display:flex; align-items:center; justify-content:space-between;
+  flex-wrap:wrap; gap:1rem;
+  background:var(--surface); border:1px solid var(--border);
+  border-radius:var(--radius); padding:1.2rem 1.5rem;
+}
+.callercard-topbar h2 { font-family:'Bebas Neue',sans-serif; font-size:1.8rem; letter-spacing:0.06em; color:var(--accent); }
+.callercard-topbar p { color:var(--muted); font-size:0.82rem; margin-top:0.2rem; }
+
+.caller-card-doc {
+  background:#fff; border-radius:12px; padding:2rem;
+  color:#1a2a5a; font-family:'DM Sans',sans-serif;
+  box-shadow:0 8px 32px rgba(0,0,0,0.4);
+}
+.caller-card-doc h3 {
+  font-family:'Playfair Display',serif; font-size:1.6rem;
+  text-align:center; margin-bottom:0.3rem;
+  background:linear-gradient(135deg,#1a3a7a,#2a5aaa);
+  -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
+}
+.caller-card-subtitle { text-align:center; font-size:0.75rem; color:#7788aa; margin-bottom:1rem; letter-spacing:0.08em; text-transform:uppercase; }
+.caller-card-instructions {
+  background:#f0f4fb; border-radius:8px; padding:0.8rem 1rem;
+  font-size:0.77rem; color:#445; margin-bottom:1.2rem; line-height:1.55;
+  border-left:3px solid #2a5aaa;
+}
+.caller-song-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(130px,1fr)); gap:6px; }
+.caller-song-tile {
+  border:1.5px solid #b8cce8; border-radius:7px;
+  padding:0.5rem 0.4rem; font-size:0.68rem; font-weight:600;
+  text-align:center; line-height:1.25; color:#1a2a5a;
+  min-height:44px; display:flex; align-items:center; justify-content:center;
+}
+.caller-song-tile:nth-child(even) { background:#f0f4fb; }
+
+/* ═══ PRINT ═══ */
+@media print {
+  body { background:#fff !important; }
+  body::before,body::after { display:none !important; }
+  header,.tabs-wrap { display:none !important; }
+
+  /* Print bingo cards */
+  body.print-cards .tab-panel { display:none !important; }
+  body.print-cards #outputSection { display:block !important; }
+  body.print-cards #generatorPanel { display:block !important; }
+  body.print-cards .section:not(#outputSection) { display:none !important; }
+  body.print-cards .btn-generate { display:none !important; }
+  body.print-cards .output-header { display:none !important; }
+  body.print-cards #cardsContainer { display:grid !important; grid-template-columns:1fr 1fr; gap:10px; }
+  body.print-cards .bingo-card { box-shadow:none !important; border:1px solid #ccc !important; }
+
+  /* Print caller card */
+  body.print-caller main > .tab-panel { display:none !important; }
+  body.print-caller #callerCardPanel { display:flex !important; flex-direction:column !important; }
+  body.print-caller .callercard-topbar { display:none !important; }
+  body.print-caller .caller-card-doc { box-shadow:none !important; border:1px solid #ccc; }
+}
+</style>
+</head>
+<body>
+
+<header>
+  <span class="logo-emoji">🎵</span>
+  <h1>Bingo Brujo</h1>
+  <p>Free bingo card generator &nbsp;·&nbsp; Unlimited cards &nbsp;·&nbsp; Live caller board &nbsp;·&nbsp; Printable caller card</p>
+</header>
+
+<div class="tabs-wrap">
+  <button class="tab-btn active"  id="tabGenerator"   onclick="switchTab('generator',this)">🎲 Card Generator</button>
+  <button class="tab-btn"         id="tabCallerBoard" onclick="switchTab('callerBoard',this)">📺 Live Caller Board</button>
+  <button class="tab-btn"         id="tabCallerCard"  onclick="switchTab('callerCard',this)">🖨️ Caller's Card</button>
+</div>
+
+<main>
+
+<!-- ══════ TAB 1: GENERATOR ══════ -->
+<div class="tab-panel active" id="generatorPanel">
+
+  <div class="section">
+    <div class="section-title"><span>🎤</span> Songs &amp; Title</div>
+    <label>Card Title</label>
+    <input type="text" id="cardTitle" value="♫ Bingo Brujo ♫" placeholder="e.g. 90s Hits Bingo"/>
+    <label>Songs (one per line)</label>
+    <textarea id="songsInput" placeholder="Paste your songs here, one per line..."></textarea>
+    <div class="song-counter">
+      <div class="badge" id="songCount">0 songs</div>
+      <span id="songHint">Enter at least 24 songs for a 5×5 grid</span>
+    </div>
+    <div class="error-msg" id="songError"></div>
+  </div>
+
+  <div class="section">
+    <div class="section-title"><span>⚙️</span> Card Options</div>
+    <div class="row-2">
+      <div>
+        <label>Number of Cards</label>
+        <input type="number" id="numCards" value="30" min="1" max="9999"/>
+      </div>
+      <div>
+        <label>Grid Size</label>
+        <select id="gridSize">
+          <option value="auto">Auto (based on songs)</option>
+          <option value="3">3×3 (needs 9 songs)</option>
+          <option value="4">4×4 (needs 16 songs)</option>
+          <option value="5" selected>5×5 (needs 24 songs)</option>
+          <option value="6">6×6 (needs 35 songs)</option>
+          <option value="7">7×7 (needs 48 songs)</option>
+        </select>
+      </div>
+    </div>
+    <label class="check-row" for="hasFreeSpace">
+      <input type="checkbox" id="hasFreeSpace" checked/>
+      <span>Include Free Space in center</span>
+    </label>
+    <div id="freeSpaceLabelWrap" style="margin-top:0.6rem;">
+      <label>Free Space Label</label>
+      <input type="text" id="freeSpaceText" value="FREE SPACE" placeholder="FREE SPACE"/>
+    </div>
+  </div>
+
+  <button class="btn-generate" onclick="generateCards()">🎲 Generate Bingo Cards</button>
+
+  <div class="section" id="outputSection">
+    <div class="output-header">
+      <h2 id="outputTitle">30 Cards Generated</h2>
+      <div class="output-actions">
+        <button class="btn-secondary" onclick="printBingoCards()">🖨️ Print / Save PDF</button>
+        <button class="btn-secondary" onclick="generateCards()">🔀 Regenerate</button>
+      </div>
+    </div>
+    <div id="cardsContainer"></div>
+  </div>
+
+</div>
+
+
+<!-- ══════ TAB 2: LIVE CALLER BOARD ══════ -->
+<div class="tab-panel" id="callerBoardPanel">
+
+  <div class="caller-topbar">
+    <div>
+      <h2>Live Caller Board</h2>
+      <p>Click a song tile to mark it as called &nbsp;·&nbsp; Click again to unmark</p>
+    </div>
+    <div class="caller-topbar-right">
+      <button class="btn-danger" onclick="resetCallerBoard()">↺ Reset All</button>
+    </div>
+  </div>
+
+  <!-- Spotlight -->
+  <div class="last-called-wrap">
+    <div class="last-called-label">▶ Now Playing / Last Called</div>
+    <div class="last-called-song empty" id="lastCalledSong">—</div>
+  </div>
+
+  <!-- Stats -->
+  <div class="caller-stats">
+    <div class="stat-chip">✅ Called: <strong id="statCalled">0</strong></div>
+    <div class="stat-chip">⏳ Remaining: <strong id="statRemaining">0</strong></div>
+    <div class="stat-chip">🎵 Total: <strong id="statTotal">0</strong></div>
+  </div>
+
+  <!-- Tiles -->
+  <div class="caller-grid" id="callerGrid"></div>
+
+</div>
+
+
+<!-- ══════ TAB 3: CALLER'S CARD ══════ -->
+<div class="tab-panel" id="callerCardPanel">
+
+  <div class="callercard-topbar">
+    <div>
+      <h2>Caller's Card</h2>
+      <p>Print this and tick off songs as you call them during the game</p>
+    </div>
+    <div style="display:flex;gap:0.5rem;flex-wrap:wrap;align-items:center;">
+      <button class="btn-secondary" onclick="printCallerCard()">🖨️ Print Caller's Card</button>
+    </div>
+  </div>
+
+  <div class="caller-card-doc" id="callerCardDoc">
+    <h3 id="callerCardTitle">♫ Bingo Brujo ♫</h3>
+    <div class="caller-card-subtitle">Caller's Reference Card</div>
+    <div class="caller-card-instructions">
+      <strong>How to use:</strong> Print <strong>two copies</strong> of this page. 
+      Cut one copy into individual squares, fold them and drop them into a hat — draw one at a time to call the game. 
+      Use the second (uncut) copy to tick off songs as they are called, and to verify winning cards at the end.
+    </div>
+    <div class="caller-song-grid" id="callerSongGrid"></div>
+  </div>
+
+</div>
+
+</main>
+
+<script>
+/* ── Default songs ── */
+const DEFAULT_SONGS = `The Ketchup Song (Aserejé)
+Golden
+Harlem Shake
+Lady - Hear Me Tonight
+Harder, Better, Faster, Stronger
+Satisfaction
+Destination Calabria
+Dragostea din tei
+Call on Me
+Everytime We Touch
+World Hold On
+Love Is Gone
+I Remember
+Stereo Love
+Murder She Wrote
+Romie
+Heads High
+Action
+Infiltrate
+Champion
+Ting-A-Ling
+Baby, I Love Your Way
+Single Ladies
+Good Time
+Timber
+The Show
+Bad Romance
+TiK ToK
+Daylight
+Turn Up the Music
+Best Day Of My Life
+Hangover
+Turn The Lights Off
+Calling
+Clarity
+I Could Be The One
+Don't You Worry Child
+If I Lose Myself
+Million Voices
+Titanium
+Under Control
+Wake Me Up
+Down By The River
+Africa
+One More Time
+Scream & Shout
+I Gotta Feeling
+Safe and Sound
+I Love It
+I Can't Dance
+Mariposa tecknicolor
+La Bomba
+Don
+Danza Kuduro
+La Copa de la Vida
+Waka Waka
+La Gozadera
+Mama Said
+Un Dos Tres
+El Sol No Regresa
+We No Speak Americano
+Persiana Americana
+El Matador
+Bonito
+Voy a pasármelo bien
+Te Mando Flores
+Baracunatana
+Nada Fue Un Error
+Pardon Me
+Come As You Are
+Mamá No Quiero Comer Mas Huevo
+Killing In The Name
+Wonderwall
+Everlong
+When I Come Around
+Scar Tissue
+Song 2
+Say It Ain't So
+Sabotage
+De Música Ligera
+Entre dos tierras
+Oye Mi Amor
+Señorita a Mi Me Gusta Su Style
+Perfidia
+La Muralla Verde
+Clavado en Un Bar
+La Camisa Negra
+Es Por Ti
+Summer
+Let's Get It Started`;
+
+/* ── State ── */
+let calledSongs = new Set();
+let currentSongs = [];
+
+/* ── Init ── */
+const songsInput = document.getElementById('songsInput');
+songsInput.value = DEFAULT_SONGS;
+updateSongCount();
+songsInput.addEventListener('input', () => { updateSongCount(); });
+document.getElementById('hasFreeSpace').addEventListener('change', function() {
+  document.getElementById('freeSpaceLabelWrap').style.opacity = this.checked ? '1' : '0.4';
+  updateSongCount();
+});
+document.getElementById('gridSize').addEventListener('change', updateSongCount);
+document.getElementById('cardTitle').addEventListener('input', function() {
+  document.getElementById('callerCardTitle').textContent = this.value || '♫ Bingo Brujo ♫';
+});
+
+window.addEventListener('load', () => setTimeout(() => {
+  generateCards();
+}, 250));
+
+/* ── TABS ── */
+function switchTab(name, btn) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById({
+    generator:   'generatorPanel',
+    callerBoard: 'callerBoardPanel',
+    callerCard:  'callerCardPanel'
+  }[name]).classList.add('active');
+}
+
+/* ── Helpers ── */
+function getSongs() {
+  return songsInput.value.split('\n').map(s => s.trim()).filter(Boolean);
+}
+function getGridSize(songs) {
+  const sel = document.getElementById('gridSize').value;
+  if (sel !== 'auto') return parseInt(sel);
+  const n = songs.length;
+  if (n < 16) return 3;
+  if (n < 25) return 4;
+  if (n < 36) return 5;
+  if (n < 49) return 6;
+  return 7;
+}
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length-1; i > 0; i--) {
+    const j = Math.floor(Math.random()*(i+1));
+    [a[i],a[j]] = [a[j],a[i]];
+  }
+  return a;
+}
+function esc(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function updateSongCount() {
+  const songs = getSongs();
+  const n = songs.length;
+  const el = document.getElementById('songCount');
+  el.textContent = n + ' song' + (n !== 1 ? 's' : '');
+  el.className = 'badge ' + (n >= 24 ? 'ok' : n >= 8 ? 'warn' : '');
+  const grid = getGridSize(songs);
+  const needed = grid*grid - (document.getElementById('hasFreeSpace').checked ? 1 : 0);
+  document.getElementById('songHint').textContent =
+    n < 8 ? 'Need at least 8 songs for a 3×3 card'
+           : `Grid: ${grid}×${grid} · ${needed} songs per card`;
+}
+
+/* ── GENERATE BINGO CARDS ── */
+function generateCards() {
+  const songs = getSongs();
+  const errEl = document.getElementById('songError');
+  errEl.style.display = 'none';
+
+  const grid = getGridSize(songs);
+  const hasFree = document.getElementById('hasFreeSpace').checked;
+  const freeLabel = document.getElementById('freeSpaceText').value || 'FREE SPACE';
+  const numCards = Math.max(1, Math.min(9999, parseInt(document.getElementById('numCards').value) || 30));
+  const title = document.getElementById('cardTitle').value || 'Bingo';
+
+  const cells = grid*grid;
+  const needed = hasFree ? cells-1 : cells;
+  if (songs.length < needed) {
+    errEl.textContent = `Need at least ${needed} songs for a ${grid}×${grid} grid${hasFree?' with free space':''}. You have ${songs.length}.`;
+    errEl.style.display = 'block';
+    return;
+  }
+
+  currentSongs = songs;
+  const container = document.getElementById('cardsContainer');
+  container.innerHTML = '';
+  const centerIdx = hasFree ? Math.floor(cells/2) : -1;
+
+  for (let c = 0; c < numCards; c++) {
+    const picked = shuffle(songs).slice(0, needed);
+    const cellData = [];
+    let si = 0;
+    for (let i = 0; i < cells; i++) {
+      cellData.push(i === centerIdx ? {text: freeLabel, free: true} : {text: picked[si++], free: false});
+    }
+    container.appendChild(buildBingoCard(title, c+1, cellData, grid));
+  }
+
+  const out = document.getElementById('outputSection');
+  out.style.display = 'block';
+  document.getElementById('outputTitle').textContent = `${numCards} Card${numCards !== 1 ? 's' : ''} Generated`;
+  out.scrollIntoView({behavior:'smooth', block:'start'});
+
+  rebuildCallerBoard();
+  rebuildCallerCard();
+}
+
+function buildBingoCard(title, id, cellData, grid) {
+  const wrap = document.createElement('div');
+  wrap.className = 'bingo-card';
+  const hdr = document.createElement('div');
+  hdr.className = 'bingo-card-header';
+  hdr.innerHTML = `<div><span class="music-note">♫</span> <span class="bingo-card-title">${esc(title)}</span> <span class="music-note">♫</span></div><div class="bingo-card-id">Card #${String(id).padStart(3,'0')}</div>`;
+  wrap.appendChild(hdr);
+  const g = document.createElement('div');
+  g.className = 'bingo-grid';
+  g.style.gridTemplateColumns = `repeat(${grid},1fr)`;
+  cellData.forEach(c => {
+    const el = document.createElement('div');
+    el.className = 'bingo-cell' + (c.free?' free-space':'') + (c.text.length<=6?' big-text':'');
+    el.textContent = c.text;
+    g.appendChild(el);
+  });
+  wrap.appendChild(g);
+  const ft = document.createElement('div');
+  ft.className = 'bingo-footer';
+  ft.textContent = 'bingo-brujo.vercel.app';
+  wrap.appendChild(ft);
+  return wrap;
+}
+
+/* ── CALLER BOARD ── */
+function rebuildCallerBoard() {
+  const songs = getSongs();
+  if (!songs.length) return;
+  currentSongs = songs;
+  calledSongs.clear();
+  renderCallerGrid();
+  updateCallerStats();
+  const spot = document.getElementById('lastCalledSong');
+  spot.textContent = '—';
+  spot.classList.add('empty');
+}
+
+function renderCallerGrid() {
+  const grid = document.getElementById('callerGrid');
+  grid.innerHTML = '';
+  currentSongs.forEach(song => {
+    const tile = document.createElement('div');
+    tile.className = 'caller-tile' + (calledSongs.has(song) ? ' called' : '');
+    tile.textContent = song;
+    tile.addEventListener('click', () => toggleSong(song, tile));
+    grid.appendChild(tile);
+  });
+}
+
+function toggleSong(song, tile) {
+  if (calledSongs.has(song)) {
+    calledSongs.delete(song);
+    tile.classList.remove('called');
+  } else {
+    calledSongs.add(song);
+    tile.classList.add('called');
+    const spot = document.getElementById('lastCalledSong');
+    spot.style.opacity = '0';
+    spot.classList.remove('empty');
+    spot.textContent = song;
+    requestAnimationFrame(() => requestAnimationFrame(() => { spot.style.opacity = '1'; }));
+  }
+  updateCallerStats();
+}
+
+function updateCallerStats() {
+  const t = currentSongs.length;
+  const c = calledSongs.size;
+  document.getElementById('statCalled').textContent = c;
+  document.getElementById('statRemaining').textContent = t - c;
+  document.getElementById('statTotal').textContent = t;
+}
+
+function resetCallerBoard() {
+  calledSongs.clear();
+  renderCallerGrid();
+  updateCallerStats();
+  const spot = document.getElementById('lastCalledSong');
+  spot.textContent = '—';
+  spot.classList.add('empty');
+}
+
+/* ── CALLER'S CARD (printable) ── */
+function rebuildCallerCard() {
+  const songs = getSongs();
+  const title = document.getElementById('cardTitle').value || '♫ Bingo Brujo ♫';
+  document.getElementById('callerCardTitle').textContent = title;
+  const grid = document.getElementById('callerSongGrid');
+  grid.innerHTML = '';
+  songs.forEach(song => {
+    const tile = document.createElement('div');
+    tile.className = 'caller-song-tile';
+    tile.textContent = song;
+    grid.appendChild(tile);
+  });
+}
+
+/* ── PRINT ── */
+function printBingoCards() {
+  document.body.classList.add('print-cards');
+  window.print();
+  document.body.classList.remove('print-cards');
+}
+function printCallerCard() {
+  document.body.classList.add('print-caller');
+  window.print();
+  document.body.classList.remove('print-caller');
+}
+</script>
+</body>
+</html>
