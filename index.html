@@ -227,10 +227,16 @@ textarea { resize:vertical; min-height:180px; line-height:1.6; }
   background:#e8f0fb; border:1px solid #b8cce8; border-radius:4px;
   display:flex; align-items:center; justify-content:center;
   text-align:center; padding:3px 2px;
-  font-size:0.65rem; font-weight:600; line-height:1.2;
-  color:#1a2a5a; word-break:break-word; hyphens:auto;
+  font-size:0.74rem; font-weight:600; line-height:1.1;
+  color:#1a2a5a; word-break:break-word; overflow-wrap:anywhere; hyphens:auto;
   overflow:hidden;
 }
+/* Song titles scale individually so short names print large while long names still fit. */
+.bingo-cell.font-short   { font-size:0.98rem; }
+.bingo-cell.font-medium  { font-size:0.87rem; }
+.bingo-cell.font-long    { font-size:0.77rem; }
+.bingo-cell.font-xlong   { font-size:0.68rem; }
+.bingo-cell.font-xxlong  { font-size:0.60rem; }
 .bingo-cell.free-space {
   background:linear-gradient(135deg,#1a3a7a,#2a5aaa);
   color:#fff; font-size:0.7rem; font-weight:700; letter-spacing:0.03em;
@@ -1000,6 +1006,17 @@ function titleFontSize(title, mode) {
   return '0.55rem';
 }
 
+/* Assign a size class to every song. This keeps the largest readable font per title length. */
+function cellFontClass(text, isFree) {
+  if (isFree) return '';
+  const l = (text || '').trim().length;
+  if (l <= 10) return ' font-short';
+  if (l <= 18) return ' font-medium';
+  if (l <= 28) return ' font-long';
+  if (l <= 42) return ' font-xlong';
+  return ' font-xxlong';
+}
+
 /* ── Print mode ── */
 function setPrintMode(mode, btn) {
   currentPrintMode = mode;
@@ -1014,22 +1031,26 @@ function injectPrintStyle(mode) {
   const cfg = {
     economy: {
       page: 'letter portrait', margin: '0.3in',
-      cols: 2, gap: '0.12in', cardH: '5.0in',
-      cellFont: '0.64rem', cellPad: '2px',
+      cols: 2, gap: '0.12in', cardH: '5.0in', cellPad: '1px',
+      shortFont: '0.90rem', mediumFont: '0.82rem', longFont: '0.73rem',
+      xlongFont: '0.65rem', xxlongFont: '0.58rem', freeFont: '0.74rem',
       hdrPad: '0.35rem 0.6rem', hdrFont: titleFontSize(titleVal),
       footFont: '0.47rem'
     },
     largeprint: {
-      page: 'letter landscape', margin: '0.3in',
-      cols: 3, gap: '0.1in', cardH: '7.75in',
-      cellFont: '0.7rem', cellPad: '3px',
-      hdrPad: '0.4rem 0.7rem', hdrFont: titleFontSize(titleVal),
+      // Three wide, horizontal cards stacked vertically on one Letter portrait page.
+      page: 'letter portrait', margin: '0.3in',
+      cols: 1, gap: '0.08in', cardH: '3.38in', cellPad: '2px',
+      shortFont: '1.12rem', mediumFont: '1.02rem', longFont: '0.92rem',
+      xlongFont: '0.82rem', xxlongFont: '0.72rem', freeFont: '0.92rem',
+      hdrPad: '0.3rem 0.7rem', hdrFont: titleFontSize(titleVal),
       footFont: '0.5rem'
     },
     jumbo: {
       page: 'letter portrait', margin: '0.3in',
-      cols: 1, gap: '0.12in', cardH: '5.0in',
-      cellFont: '1.0rem', cellPad: '4px',
+      cols: 1, gap: '0.12in', cardH: '5.0in', cellPad: '3px',
+      shortFont: '1.30rem', mediumFont: '1.16rem', longFont: '1.02rem',
+      xlongFont: '0.90rem', xxlongFont: '0.78rem', freeFont: '1.02rem',
       hdrPad: '0.5rem 1rem', hdrFont: titleFontSize(titleVal, 'jumbo'),
       footFont: '0.55rem'
     }
@@ -1039,17 +1060,59 @@ function injectPrintStyle(mode) {
   s.id = 'print-style';
   s.textContent = `
     @page { size: ${c.page}; margin: ${c.margin}; }
-    html, body { background: #fff !important; }
-    body.print-cards #cardsContainer {
-      grid-template-columns: repeat(${c.cols}, 1fr) !important;
-      gap: ${c.gap} !important;
+    html, body {
+      background: #fff !important;
+      margin: 0 !important;
+      padding: 0 !important;
+      width: 100% !important;
+      height: auto !important;
     }
-    body.print-cards .bingo-card { height: ${c.cardH} !important; }
+    body.print-cards main {
+      display: block !important;
+      width: 100% !important;
+      max-width: none !important;
+      margin: 0 !important;
+      padding: 0 !important;
+    }
+    body.print-cards #generatorPanel {
+      display: block !important;
+      margin: 0 !important;
+      padding: 0 !important;
+    }
+    body.print-cards #outputSection {
+      display: block !important;
+      width: 100% !important;
+      margin: 0 !important;
+      padding: 0 !important;
+      border: 0 !important;
+      border-radius: 0 !important;
+      background: #fff !important;
+    }
+    body.print-cards #cardsContainer {
+      display: grid !important;
+      grid-template-columns: repeat(${c.cols}, minmax(0, 1fr)) !important;
+      grid-auto-flow: row !important;
+      align-items: stretch !important;
+      gap: ${c.gap} !important;
+      width: 100% !important;
+      margin: 0 !important;
+      padding: 0 !important;
+    }
+    body.print-cards .bingo-card {
+      width: 100% !important;
+      height: ${c.cardH} !important;
+    }
     body.print-cards .bingo-cell {
-      font-size: ${c.cellFont} !important;
       padding: ${c.cellPad} !important;
       min-height: 0 !important;
+      line-height: 1.08 !important;
     }
+    body.print-cards .bingo-cell.font-short  { font-size: ${c.shortFont} !important; }
+    body.print-cards .bingo-cell.font-medium { font-size: ${c.mediumFont} !important; }
+    body.print-cards .bingo-cell.font-long   { font-size: ${c.longFont} !important; }
+    body.print-cards .bingo-cell.font-xlong  { font-size: ${c.xlongFont} !important; }
+    body.print-cards .bingo-cell.font-xxlong { font-size: ${c.xxlongFont} !important; }
+    body.print-cards .bingo-cell.free-space  { font-size: ${c.freeFont} !important; }
     body.print-cards .bingo-card-title { font-size: ${c.hdrFont} !important; }
     body.print-cards .bingo-card-header { padding: ${c.hdrPad} !important; }
     body.print-cards .bingo-footer { font-size: ${c.footFont} !important; padding: 1px 6px 2px !important; }
@@ -1130,7 +1193,7 @@ function buildBingoCard(title, id, cellData, grid) {
   g.style.gridTemplateColumns = `repeat(${grid},1fr)`;
   cellData.forEach(c => {
     const el = document.createElement('div');
-    el.className = 'bingo-cell' + (c.free ? ' free-space' : '');
+    el.className = 'bingo-cell' + (c.free ? ' free-space' : '') + cellFontClass(c.text, c.free);
     el.textContent = c.text;
     g.appendChild(el);
   });
@@ -1335,7 +1398,7 @@ function setLang(lang) {
 
 /* ══════ SPOTIFY IMPORT ══════ */
 
-const SPOTIFY_CLIENT_ID = ''; // Paste your Spotify App Client ID here
+const SPOTIFY_CLIENT_ID = 'bbe733ee10134e9d9964ebca50ecb7ef'; // Spotify App Client ID
 const SPOTIFY_SCOPES    = 'playlist-read-public playlist-read-collaborative';
 const SPOTIFY_REDIRECT  = window.location.href.split('?')[0].split('#')[0];
 
