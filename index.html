@@ -396,6 +396,65 @@ textarea { resize:vertical; min-height:180px; line-height:1.6; }
 .lang-btn.active { background:var(--accent); color:#0d0d1a; }
 .lang-btn:not(.active):hover { color:var(--text); background:var(--surface); }
 
+/* ═══ SPOTIFY IMPORT ═══ */
+.sp-connect-row {
+  display:flex; align-items:center; gap:0.75rem; flex-wrap:wrap;
+  background:var(--card); border:1px solid var(--border);
+  border-radius:10px; padding:0.85rem 1rem; margin-bottom:0.75rem;
+}
+.sp-connect-row p { font-size:0.82rem; color:var(--muted); flex:1; min-width:180px; }
+.sp-token-badge {
+  display:inline-flex; align-items:center; gap:0.4rem;
+  background:rgba(94,240,160,0.12); border:1px solid var(--green);
+  border-radius:20px; padding:0.25rem 0.75rem;
+  font-size:0.78rem; font-weight:600; color:var(--green); white-space:nowrap;
+}
+.sp-url-row { display:flex; gap:0.6rem; align-items:stretch; flex-wrap:wrap; margin-bottom:0.6rem; }
+.sp-url-row input { flex:1; min-width:220px; }
+.sp-status {
+  font-size:0.85rem; border-radius:10px;
+  padding:0.65rem 1rem; margin-top:0.5rem; display:none;
+}
+.sp-status.info  { background:rgba(77,172,255,0.1);  border:1px solid rgba(77,172,255,0.3);  color:var(--blue); }
+.sp-status.error { background:rgba(224,92,138,0.12); border:1px solid rgba(224,92,138,0.4); color:var(--accent2); }
+.sp-status.ok    { background:rgba(94,240,160,0.1);  border:1px solid var(--green); color:var(--green); }
+.sp-review-header {
+  display:flex; align-items:center; justify-content:space-between;
+  flex-wrap:wrap; gap:0.6rem; margin-bottom:0.75rem;
+}
+.sp-review-header h3 { font-family:'Bebas Neue',sans-serif; font-size:1.35rem; letter-spacing:0.07em; color:var(--accent); }
+.sp-review-list { display:flex; flex-direction:column; gap:3px; margin-bottom:1rem; max-height:420px; overflow-y:auto; }
+.sp-song-row {
+  display:grid; grid-template-columns:1.5rem 1fr 1.6rem;
+  align-items:center; gap:0.4rem;
+  background:var(--card); border:1px solid var(--border);
+  border-radius:8px; padding:0.35rem 0.5rem;
+  font-size:0.82rem;
+}
+.sp-song-row.sp-dup { border-color:var(--accent); }
+.sp-row-num { color:var(--muted); font-size:0.72rem; text-align:right; flex-shrink:0; }
+.sp-song-text { color:var(--text); overflow:hidden; white-space:nowrap; text-overflow:ellipsis; cursor:pointer; }
+.sp-song-text:focus { outline:none; white-space:normal; overflow:visible; background:var(--surface); border-radius:4px; padding:1px 4px; color:var(--text); }
+.sp-song-text.modified { color:var(--accent); }
+.sp-dup-badge {
+  font-size:0.62rem; font-weight:700; color:var(--accent);
+  background:rgba(240,192,64,0.12); border:1px solid rgba(240,192,64,0.3);
+  border-radius:4px; padding:0px 4px; white-space:nowrap;
+}
+.sp-del-btn {
+  background:transparent; border:none; color:var(--muted);
+  cursor:pointer; font-size:1rem; line-height:1; padding:0 2px;
+  transition:color 0.15s; flex-shrink:0;
+}
+.sp-del-btn:hover { color:var(--accent2); }
+.sp-import-bar {
+  display:flex; align-items:center; justify-content:space-between;
+  flex-wrap:wrap; gap:0.75rem; padding-top:0.5rem;
+  border-top:1px solid var(--border);
+}
+.sp-count { font-size:0.82rem; color:var(--muted); }
+.sp-count strong { color:var(--text); }
+
 /* ═══ PRINT ═══ */
 @media print {
   body::before, body::after { display:none !important; }
@@ -438,6 +497,7 @@ textarea { resize:vertical; min-height:180px; line-height:1.6; }
 
 <div class="tabs-wrap">
   <button class="tab-btn active"  id="tabGenerator"   onclick="switchTab('generator',this)">🎲 Card Generator</button>
+  <button class="tab-btn"         id="tabSpotify"     onclick="switchTab('spotify',this)">🎵 Spotify Import</button>
   <button class="tab-btn"         id="tabCallerBoard" onclick="switchTab('callerBoard',this)">📺 Live Caller Board</button>
   <button class="tab-btn"         id="tabCallerCard"  onclick="switchTab('callerCard',this)">🖨️ Caller's Card</button>
 </div>
@@ -506,6 +566,49 @@ textarea { resize:vertical; min-height:180px; line-height:1.6; }
       <button class="psz-btn" onclick="setPrintMode('jumbo',this)" id="pszJumbo">Jumbo (2/page)</button>
     </div>
     <div id="cardsContainer"></div>
+  </div>
+
+</div>
+
+
+<!-- ══════ TAB 1b: SPOTIFY IMPORT ══════ -->
+<div class="tab-panel" id="spotifyPanel">
+
+  <div class="section">
+    <div class="section-title"><span>🎵</span> Spotify Connection</div>
+    <div class="sp-connect-row">
+      <p id="spConnectMsg">Connect your Spotify account to import playlist tracks directly into the generator.</p>
+      <span class="sp-token-badge" id="spTokenBadge" style="display:none">✓ Connected</span>
+      <button class="btn-secondary" id="spConnectBtn" onclick="spotifyLogin()">Connect Spotify</button>
+      <button class="btn-secondary" id="spDisconnectBtn" onclick="spotifyLogout()" style="display:none">Disconnect</button>
+    </div>
+    <div class="sp-status" id="spAuthStatus"></div>
+  </div>
+
+  <div class="section" id="spImportSection">
+    <div class="section-title"><span>🔗</span> Import Playlist</div>
+    <label>Playlist URL</label>
+    <div class="sp-url-row">
+      <input type="text" id="spPlaylistUrl" placeholder="https://open.spotify.com/playlist/…" autocomplete="off"/>
+      <button class="btn-secondary" onclick="importSpotifyPlaylist()">Import</button>
+    </div>
+    <div class="sp-status" id="spImportStatus"></div>
+  </div>
+
+  <div class="section" id="spReviewSection" style="display:none">
+    <div class="sp-review-header">
+      <h3 id="spReviewTitle">Playlist Review</h3>
+      <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
+        <button class="btn-secondary" onclick="spCleanAll()">✨ Re-clean All</button>
+        <button class="btn-secondary" onclick="spRestoreAll()">↩ Restore Originals</button>
+      </div>
+    </div>
+    <p style="font-size:0.8rem;color:var(--muted);margin-bottom:0.75rem;">Click a title to edit it. Duplicates are flagged <span style="color:var(--accent);">◆</span>.</p>
+    <div class="sp-review-list" id="spReviewList"></div>
+    <div class="sp-import-bar">
+      <span class="sp-count" id="spReviewCount"></span>
+      <button class="btn-generate" style="width:auto;padding:0.8rem 2rem;font-size:1.1rem;" onclick="spImportToGenerator()">→ Add to Generator</button>
+    </div>
   </div>
 
 </div>
@@ -607,6 +710,7 @@ const I18N = {
     h1:               "Greg's Bingo Generator",
     headerSub:        "Free bingo card generator  ·  Unlimited cards  ·  Live caller board  ·  Printable caller card",
     tabGenerator:     "🎲 Card Generator",
+    tabSpotify:       "🎵 Spotify Import",
     tabCallerBoard:   "📺 Live Caller Board",
     tabCallerCard:    "🖨️ Caller's Card",
     labelCardTitle:   "Card Title",
@@ -660,6 +764,7 @@ const I18N = {
     h1:               "Generador de Bingo de Greg",
     headerSub:        "Generador de cartones gratuito  ·  Cartones ilimitados  ·  Tablero en vivo  ·  Tarjeta del cantador imprimible",
     tabGenerator:     "🎲 Generador",
+    tabSpotify:       "🎵 Importar Spotify",
     tabCallerBoard:   "📺 Tablero en Vivo",
     tabCallerCard:    "🖨️ Tarjeta del Cantador",
     labelCardTitle:   "Título del Cartón",
@@ -822,9 +927,11 @@ document.getElementById('cardTitle').addEventListener('input', function() {
   document.getElementById('callerCardTitle').textContent = this.value || 'Bingo';
 });
 
-window.addEventListener('load', () => setTimeout(() => {
-  generateCards();
-}, 250));
+window.addEventListener('load', () => {
+  handleSpotifyCallback();
+  if (spGetToken()) spUpdateAuthUI(true);
+  setTimeout(() => generateCards(), 250);
+});
 
 /* ── TABS ── */
 function switchTab(name, btn) {
@@ -833,6 +940,7 @@ function switchTab(name, btn) {
   btn.classList.add('active');
   document.getElementById({
     generator:   'generatorPanel',
+    spotify:     'spotifyPanel',
     callerBoard: 'callerBoardPanel',
     callerCard:  'callerCardPanel'
   }[name]).classList.add('active');
@@ -1159,6 +1267,7 @@ function setLang(lang) {
   document.querySelector('header p').innerHTML = t.headerSub;
 
   document.getElementById('tabGenerator').textContent   = t.tabGenerator;
+  document.getElementById('tabSpotify').textContent     = t.tabSpotify;
   document.getElementById('tabCallerBoard').textContent = t.tabCallerBoard;
   document.getElementById('tabCallerCard').textContent  = t.tabCallerCard;
 
@@ -1222,6 +1331,351 @@ function setLang(lang) {
   updateSongCount();
   const cs = document.getElementById('callerSearch');
   if (cs && cs.value) filterCallerGrid(cs.value);
+}
+
+/* ══════ SPOTIFY IMPORT ══════ */
+
+const SPOTIFY_CLIENT_ID = ''; // Paste your Spotify App Client ID here
+const SPOTIFY_SCOPES    = 'playlist-read-public playlist-read-collaborative';
+const SPOTIFY_REDIRECT  = window.location.href.split('?')[0].split('#')[0];
+
+/* ── PKCE helpers ── */
+function spRandBytes(n) {
+  return crypto.getRandomValues(new Uint8Array(n));
+}
+function spBase64Url(buf) {
+  return btoa(String.fromCharCode(...buf))
+    .replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+}
+async function spCodeChallenge(verifier) {
+  const data = new TextEncoder().encode(verifier);
+  const hash = await crypto.subtle.digest('SHA-256', data);
+  return spBase64Url(new Uint8Array(hash));
+}
+
+/* ── Auth ── */
+async function spotifyLogin() {
+  if (!SPOTIFY_CLIENT_ID) {
+    spShowStatus('spAuthStatus', 'error',
+      'No Spotify Client ID configured. Open index.html and set SPOTIFY_CLIENT_ID at the top of the Spotify JS section.');
+    return;
+  }
+  const verifier  = spBase64Url(spRandBytes(32));
+  const challenge = await spCodeChallenge(verifier);
+  const state     = spBase64Url(spRandBytes(8));
+  sessionStorage.setItem('sp_verifier', verifier);
+  sessionStorage.setItem('sp_state',    state);
+  const params = new URLSearchParams({
+    response_type: 'code',
+    client_id:     SPOTIFY_CLIENT_ID,
+    scope:         SPOTIFY_SCOPES,
+    redirect_uri:  SPOTIFY_REDIRECT,
+    state,
+    code_challenge_method: 'S256',
+    code_challenge:        challenge,
+  });
+  window.location.href = 'https://accounts.spotify.com/authorize?' + params;
+}
+
+function spotifyLogout() {
+  sessionStorage.removeItem('sp_access_token');
+  sessionStorage.removeItem('sp_token_expires');
+  sessionStorage.removeItem('sp_verifier');
+  sessionStorage.removeItem('sp_state');
+  spUpdateAuthUI(false);
+  document.getElementById('spReviewSection').style.display = 'none';
+  spShowStatus('spAuthStatus', 'info', 'Disconnected from Spotify.');
+}
+
+function spGetToken() {
+  const token   = sessionStorage.getItem('sp_access_token');
+  const expires = parseInt(sessionStorage.getItem('sp_token_expires') || '0');
+  if (token && Date.now() < expires) return token;
+  return null;
+}
+
+function spUpdateAuthUI(connected) {
+  document.getElementById('spTokenBadge').style.display   = connected ? '' : 'none';
+  document.getElementById('spConnectBtn').style.display    = connected ? 'none' : '';
+  document.getElementById('spDisconnectBtn').style.display = connected ? '' : 'none';
+}
+
+function spShowStatus(id, type, msg) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.className = 'sp-status ' + type;
+  el.textContent = msg;
+  el.style.display = 'block';
+}
+function spHideStatus(id) {
+  const el = document.getElementById(id);
+  if (el) el.style.display = 'none';
+}
+
+/* ── Handle OAuth callback on page load ── */
+async function handleSpotifyCallback() {
+  const params = new URLSearchParams(window.location.search);
+  const code   = params.get('code');
+  const state  = params.get('state');
+  const error  = params.get('error');
+
+  if (error) {
+    history.replaceState({}, '', window.location.pathname);
+    spShowStatus('spAuthStatus', 'error', 'Spotify login was cancelled or denied.');
+    switchTab('spotify', document.getElementById('tabSpotify'));
+    return;
+  }
+  if (!code) return;
+
+  const savedState    = sessionStorage.getItem('sp_state');
+  const codeVerifier  = sessionStorage.getItem('sp_verifier');
+  history.replaceState({}, '', window.location.pathname);
+
+  if (state !== savedState || !codeVerifier) {
+    spShowStatus('spAuthStatus', 'error', 'OAuth state mismatch. Please try again.');
+    switchTab('spotify', document.getElementById('tabSpotify'));
+    return;
+  }
+
+  spShowStatus('spAuthStatus', 'info', 'Connecting to Spotify…');
+  switchTab('spotify', document.getElementById('tabSpotify'));
+
+  try {
+    const res = await fetch('https://accounts.spotify.com/api/token', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+      body: new URLSearchParams({
+        grant_type:    'authorization_code',
+        code,
+        redirect_uri:  SPOTIFY_REDIRECT,
+        client_id:     SPOTIFY_CLIENT_ID,
+        code_verifier: codeVerifier,
+      }),
+    });
+    if (!res.ok) throw new Error('Token exchange failed (' + res.status + ')');
+    const data = await res.json();
+    sessionStorage.setItem('sp_access_token',  data.access_token);
+    sessionStorage.setItem('sp_token_expires', Date.now() + data.expires_in * 1000);
+    sessionStorage.removeItem('sp_verifier');
+    sessionStorage.removeItem('sp_state');
+    spUpdateAuthUI(true);
+    spHideStatus('spAuthStatus');
+    spShowStatus('spAuthStatus', 'ok', '✓ Connected to Spotify. Paste a playlist URL below to import.');
+  } catch (e) {
+    spShowStatus('spAuthStatus', 'error', 'Could not connect: ' + e.message);
+  }
+}
+
+/* ── Extract playlist ID from URL ── */
+function spParsePlaylistId(url) {
+  try {
+    const u = new URL(url.trim());
+    const m = u.pathname.match(/\/playlist\/([A-Za-z0-9]+)/);
+    return m ? m[1] : null;
+  } catch { return null; }
+}
+
+/* ── Fetch all playlist tracks (paginated) ── */
+async function spFetchTracks(playlistId, token) {
+  const tracks = [];
+  let url = `https://api.spotify.com/v1/playlists/${playlistId}/tracks?limit=50&fields=next,items(track(name,artists))`;
+  while (url) {
+    const res = await fetch(url, {headers: {Authorization: 'Bearer ' + token}});
+    if (!res.ok) throw new Error('Spotify API error ' + res.status);
+    const data = await res.json();
+    for (const item of (data.items || [])) {
+      if (item.track && item.track.name) tracks.push(item.track.name);
+    }
+    url = data.next || null;
+  }
+  return tracks;
+}
+
+/* ── Import playlist ── */
+async function importSpotifyPlaylist() {
+  const token = spGetToken();
+  if (!token) {
+    spShowStatus('spImportStatus', 'error', 'Not connected. Use "Connect Spotify" first.');
+    return;
+  }
+  const urlVal = document.getElementById('spPlaylistUrl').value.trim();
+  const pid = spParsePlaylistId(urlVal);
+  if (!pid) {
+    spShowStatus('spImportStatus', 'error', 'Could not find a playlist ID in that URL. Make sure it looks like: https://open.spotify.com/playlist/…');
+    return;
+  }
+  spShowStatus('spImportStatus', 'info', 'Fetching playlist…');
+  try {
+    const raw = await spFetchTracks(pid, token);
+    if (!raw.length) {
+      spShowStatus('spImportStatus', 'error', 'No tracks found in that playlist.');
+      return;
+    }
+    spHideStatus('spImportStatus');
+    spBuildReview(raw);
+  } catch (e) {
+    spShowStatus('spImportStatus', 'error', 'Import failed: ' + e.message);
+  }
+}
+
+/* ── Song title cleaning ── */
+function spCleanTitle(title) {
+  let t = title;
+
+  // Remove feat./featuring/ft. in parens/brackets
+  t = t.replace(/\s*[\(\[]\s*(?:feat\.?|featuring|ft\.)\s+[^\)\]]*[\)\]]/gi, '');
+  // Remove feat. as dash-suffix
+  t = t.replace(/\s*-\s*(?:feat\.?|featuring|ft\.)\s+.+$/gi, '');
+  // Remove feat. standalone at end
+  t = t.replace(/\s+(?:feat\.?|featuring|ft\.)\s+.+$/gi, '');
+
+  // Remove bracketed/parenthetical production tags
+  const tags = [
+    'radio\\s+(?:edit|mix|version)',
+    '(?:20\\d{2}|19\\d{2})\\s+remaster(?:ed)?',
+    'remaster(?:ed)?(?:\\s+(?:20\\d{2}|19\\d{2}))?',
+    'live(?:\\s+(?:version|at\\s+[^)\\]]{0,40}))?',
+    'acoustic(?:\\s+version)?',
+    'original\\s+mix',
+    'motion\\s+picture',
+    'o\\.?s\\.?t\\.?',
+    'soundtrack',
+    'mono(?:\\s+version)?',
+    'stereo(?:\\s+version)?',
+    '(?:20\\d{2}|19\\d{2})',
+  ];
+  const bracketPat = new RegExp(
+    `\\s*[\\(\\[]\\s*(?:${tags.join('|')})\\s*[\\)\\]]`,
+    'gi'
+  );
+  t = t.replace(bracketPat, '');
+
+  // Remove trailing dash-suffix production tags
+  const dashTags = [
+    'radio\\s+(?:edit|mix|version)',
+    '(?:20\\d{2}|19\\d{2})\\s+remaster(?:ed)?',
+    'remaster(?:ed)?(?:\\s+(?:20\\d{2}|19\\d{2}))?',
+    'live\\s+version',
+    'acoustic\\s+version',
+    'original\\s+mix',
+  ];
+  const dashPat = new RegExp(
+    `\\s*-\\s*(?:${dashTags.join('|')})\\s*$`,
+    'gi'
+  );
+  t = t.replace(dashPat, '');
+
+  return t.replace(/\s{2,}/g, ' ').trim();
+}
+
+/* ── Review list state ── */
+let spTracks = []; // [{original, cleaned, deleted}]
+
+function spBuildReview(rawTracks) {
+  spTracks = rawTracks.map(t => ({original: t, cleaned: spCleanTitle(t), deleted: false}));
+  spRenderReview();
+  document.getElementById('spReviewSection').style.display = '';
+  document.getElementById('spReviewSection').scrollIntoView({behavior:'smooth', block:'start'});
+}
+
+function spRenderReview() {
+  const list = document.getElementById('spReviewList');
+  list.innerHTML = '';
+
+  // Build duplicate map (by lowercased cleaned title)
+  const seen = new Map();
+  spTracks.forEach((tr, i) => {
+    if (tr.deleted) return;
+    const key = tr.cleaned.toLowerCase();
+    if (!seen.has(key)) seen.set(key, []);
+    seen.get(key).push(i);
+  });
+
+  let visible = 0;
+  let dupCount = 0;
+  spTracks.forEach((tr, i) => {
+    if (tr.deleted) return;
+    visible++;
+    const key = tr.cleaned.toLowerCase();
+    const isDup = seen.get(key).length > 1 && seen.get(key)[0] !== i;
+    if (isDup) dupCount++;
+
+    const row = document.createElement('div');
+    row.className = 'sp-song-row' + (isDup ? ' sp-dup' : '');
+    row.dataset.idx = i;
+
+    const num = document.createElement('span');
+    num.className = 'sp-row-num';
+    num.textContent = visible;
+
+    const text = document.createElement('span');
+    text.className = 'sp-song-text' + (tr.cleaned !== tr.original ? ' modified' : '');
+    text.contentEditable = 'true';
+    text.spellcheck = false;
+    text.textContent = tr.cleaned;
+    text.title = 'Original: ' + tr.original;
+    text.addEventListener('blur', () => {
+      spTracks[i].cleaned = text.textContent.trim() || tr.original;
+      spRenderReview();
+    });
+    text.addEventListener('keydown', e => {
+      if (e.key === 'Enter') { e.preventDefault(); text.blur(); }
+      if (e.key === 'Escape') { text.textContent = spTracks[i].cleaned; text.blur(); }
+    });
+
+    const right = document.createElement('span');
+    right.style.display = 'flex'; right.style.alignItems = 'center'; right.style.gap = '4px';
+
+    if (isDup) {
+      const badge = document.createElement('span');
+      badge.className = 'sp-dup-badge';
+      badge.textContent = 'dup';
+      badge.title = 'Duplicate title';
+      right.appendChild(badge);
+    }
+
+    const del = document.createElement('button');
+    del.className = 'sp-del-btn';
+    del.textContent = '×';
+    del.title = 'Remove this song';
+    del.onclick = () => { spTracks[i].deleted = true; spRenderReview(); };
+    right.appendChild(del);
+
+    row.appendChild(num);
+    row.appendChild(text);
+    row.appendChild(right);
+    list.appendChild(row);
+  });
+
+  const countEl = document.getElementById('spReviewCount');
+  countEl.innerHTML = `<strong>${visible}</strong> song${visible!==1?'s':''} ready${dupCount?' · <span style="color:var(--accent)">'+dupCount+' duplicate'+(dupCount!==1?'s':'')+' flagged</span>':''}`;
+
+  const title = document.getElementById('spReviewTitle');
+  title.textContent = 'Playlist Review (' + visible + ')';
+}
+
+function spCleanAll() {
+  spTracks.forEach(tr => { if (!tr.deleted) tr.cleaned = spCleanTitle(tr.original); });
+  spRenderReview();
+}
+
+function spRestoreAll() {
+  spTracks.forEach(tr => { if (!tr.deleted) tr.cleaned = tr.original; });
+  spRenderReview();
+}
+
+function spImportToGenerator() {
+  const songs = spTracks
+    .filter(tr => !tr.deleted && tr.cleaned.trim())
+    .map(tr => tr.cleaned.trim());
+  if (!songs.length) return;
+  document.getElementById('songsInput').value = songs.join('\n');
+  updateSongCount();
+  switchTab('generator', document.getElementById('tabGenerator'));
+  document.getElementById('outputSection').style.display = 'none';
+  setTimeout(() => {
+    document.getElementById('songsInput').scrollIntoView({behavior:'smooth', block:'center'});
+  }, 300);
 }
 
 /* ── WIN PATTERN VIDEO SWITCHER ── */
